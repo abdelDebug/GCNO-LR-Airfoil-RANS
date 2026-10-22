@@ -2,7 +2,7 @@
 
 Research implementation for **GCNO-LR**, a geometry-conditioned spectral surrogate with masked Cartesian local feature refinement for predicting sampled two-dimensional airfoil RANS fields.
 
-This repository contains the six notebooks used in the experimental contribution. They are kept in the original execution order so that the complete workflow, from benchmark preparation to frozen unseen-airfoil evaluation, can be inspected and reproduced. The manuscript itself is intentionally not included in this repository.
+This repository contains seven research notebooks. Notebooks 01–06 document benchmark preparation, model development, baseline comparisons, and the frozen official-test evaluation. Notebook 07 adds a separate, retrospective development-validation ablation of the solid-path rejection rule. The manuscript itself is intentionally not included in this repository. 
 
 ## Contribution overview
 
@@ -26,6 +26,7 @@ Run or inspect the notebooks in this order:
 | 04 | `04_publication_decisive_experiments.ipynb` | Implements the decisive development experiments, including the nearly parameter-matched convolutional-refiner control and diagnostic analyses. |
 | 05 | `05_decisive_control_and_baseline_training.ipynb` | Completes the controlled training of the convolutional refiner and the DFP, residual U-Net, and FNO baselines under the fixed budget and validation protocol. |
 | 06 | `06_frozen_official_unseen_airfoil_test.ipynb` | Freezes the selected `no_alignment` configuration as GCNO-LR, evaluates the official unseen-airfoil test, performs paired uncertainty analysis, measures inference cost, and generates fixed qualitative examples. |
+| 07 | `07_mask_path_rejection_ablation_fixed.ipynb` | Performs a controlled retrospective comparison of solid-path rejection enabled versus disabled in the selected Cartesian-stencil refiner, using matched development data, three training seeds, paired regional metrics, and uncertainty analysis. |
 
 ## Architecture provenance
 
@@ -41,7 +42,7 @@ The GCNO-LR architecture is designed in Notebook 02. The central implementation 
 8. two shared-weight refinement iterations,
 9. a learned correction head producing the final scaled velocity and pressure fields.
 
-Notebook 06 does not redesign the architecture. It freezes the selected `no_alignment` configuration and evaluates it using the prespecified official-test plan.
+Notebook 06 does not redesign the architecture. It freezes the selected `no_alignment` configuration and evaluates it using the prespecified official-test plan. Notebook 07 retains this selected architecture and changes only the stencil path-validity rule to isolate its contribution.
 
 ## Data and benchmark
 
@@ -60,6 +61,27 @@ The reported comparison uses a common training budget of **10,000 optimizer step
 The primary official comparison is GCNO-LR versus FNO on relative field L1. Pressure and vector-velocity relative L2 are reported as physical-field guardrails. Residual U-Net and DFP/TurbNetG are secondary comparisons.
 
 Paired uncertainty estimates use crossed bootstrap resampling over training seeds and unseen airfoil groups, with operating conditions averaged within each airfoil. This preserves the matched comparison and avoids treating multiple operating conditions from the same airfoil as independent geometries.
+
+## Supplementary solid-path rejection ablation
+
+Notebook 07 studies the **independent contribution of solid-path rejection** to the selected Cartesian-stencil GCNO-LR model. This additional study was performed after the frozen official test had already been evaluated. It is a **retrospective development-validation analysis**, not a replacement for the prespecified official-test comparison or a basis for selecting a new final model.
+
+Two configurations are compared: `masked` rejects sampled feature paths whose bilinear supports intersect the solid airfoil or lie outside the sampled domain; `no_path_rejection` permits paths across the solid but retains the out-of-domain checks. **Both configurations retain the learned local refinement branch, its final fluid-mask update, the same two refinement iterations, and 5,690,558 trainable parameters.** Three seeds (42, 123, 2026) were trained for 10,000 optimizer steps each, giving six matched runs.
+
+The seed-averaged, case-weighted results on the 400 development-validation cases are:
+
+| Metric (lower is better) | Path rejection enabled | Path rejection disabled |
+|---|---:|---:|
+| Scaled field L1 | 0.003664 | 0.003671 |
+| Relative field L1 | 0.018354 | 0.018393 |
+| Pressure relative L2 | 0.112548 | 0.113337 |
+| Vector-velocity relative L2 | 0.029304 | 0.029388 |
+
+Separate **airfoil-balanced paired estimates** average conditions within each airfoil before averaging across airfoils and seeds. For near-airfoil pressure MAE, the masked configuration reduced the mean from 0.031739 to 0.031414 (approximately 1.02%); the exploratory 95% crossed-bootstrap interval for the *absolute reduction* was **[−0.000400, 0.001100]**, which includes zero. The airfoil-balanced global relative field L1 reduction was approximately 0.17%, also with an interval including zero. The wake-velocity error was slightly worse with path rejection in this comparison. Gradient and divergence *errors relative to the sampled CFD targets* showed small exploratory reductions; these are not demonstrations of physical conservation.
+
+**Interpretation:** The independent accuracy contribution of solid-path rejection is small or inconclusive for the principal prediction metrics. This does **not** contradict the separate development ablation showing that the **complete learned local-refinement branch** is useful. The development split is sample-level and has substantial overlap in airfoil identities between optimization training and validation; these supplementary results do not establish transfer to new geometry identities. No official-test scores were used for reselection.
+
+The notebook defaults to `ACTION="status"` to inspect saved study progress without training. Set `ACTION="train"` only to run or resume the six training configurations, or `ACTION="summarize"` to regenerate reports from completed local study records. The raw benchmark, training checkpoints, and larger derived artifacts are not committed here.
 
 ## Reproducibility notes
 
