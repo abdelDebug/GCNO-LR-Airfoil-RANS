@@ -107,8 +107,18 @@ The result should therefore be interpreted as a controlled **accuracy-versus-com
 
 ## Authors
 
-- **Abdelaziz Triki**, Berlin School of Business and Innovation
-- **Amir Teimourian**, Berlin School of Business and Innovation
+- **Abdelaziz Triki**<sup>a,*</sup>
+- **Amir Teimourian**<sup>a</sup>
+- **Giulio Napolitano**<sup>c</sup>
+- **Hanifa Teimourian**<sup>b</sup>
+
+**Affiliations**
+
+- **a** — Faculty of Computer Science and Informatics, Berlin School of Business and Innovation, Berlin, Germany
+- **b** — Istanbul Aydin University, Faculty of Engineering, Aerospace Department, Istanbul, Turkey
+- **c** — Arden University, Coventry, UK
+
+<sup>*</sup> Corresponding author.
 
 ## Citation
 
